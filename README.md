@@ -1,4 +1,4 @@
-# REST controller
+# REST Controller
 <p><li>A simple REST Controller module written in pure Java.
 <li>THIS IS A HANDCODED EXAMPLE. 
 <li>One of the objectives is to demonstrate differences between abstract classes and abstract interfaces. 
