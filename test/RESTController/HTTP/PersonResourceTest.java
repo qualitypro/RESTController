@@ -2,12 +2,13 @@ package RESTController.HTTP;
 
 import org.junit.jupiter.api.Test;
 import java.net.URI;
+import java.nio.file.Files;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PersonResourceTest {
     @Test
     void createReadListUpdateDeleteAndValidate() throws Exception {
-        try (RestServer server = new RestServer("127.0.0.1", 0);
+        try (RestServer server = new RestServer("127.0.0.1", 0, Files.createTempDirectory("rest-test-").resolve("people.json"));
              RestClient client = new RestClient()) {
             server.start();
             URI people = URI.create("http://127.0.0.1:" + server.port() + "/api/people");
