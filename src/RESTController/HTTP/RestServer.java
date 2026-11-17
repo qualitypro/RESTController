@@ -19,6 +19,8 @@ public final class RestServer implements AutoCloseable {
         server = HttpServer.create(new InetSocketAddress(host, port), 32);
         server.createContext("/health", this::health);
         server.createContext("/api/echo", this::echo);
+        PersonResource people = new PersonResource();
+        server.createContext("/api/people", people::handle);
         server.setExecutor(Executors.newCachedThreadPool(r -> {
             Thread thread = new Thread(r, "restcontroller-http");
             thread.setDaemon(true);
