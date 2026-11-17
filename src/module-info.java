@@ -3,6 +3,7 @@
  */
 module RESTController {
     requires java.net.http;
+    requires jdk.httpserver;
     exports RESTController.HTTP;
     exports RESTController.Entities;
     exports RESTController.Interfaces;
