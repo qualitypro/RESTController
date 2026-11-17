@@ -4,6 +4,7 @@
 module RESTController {
     requires java.net.http;
     requires jdk.httpserver;
+    requires com.fasterxml.jackson.databind;
     exports RESTController.HTTP;
     exports RESTController.Entities;
     exports RESTController.Interfaces;
