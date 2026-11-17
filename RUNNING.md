@@ -45,3 +45,34 @@ curl -i -H 'Content-Type: application/json' -d '{"hello":"world"}' http://127.0.
 The original `RESTController.RESTController` entry point is preserved. It makes
 outbound calls to an external demonstration API, so use the new local server for
 offline smoke tests.
+
+## People resource API (Sprint 3)
+
+In-memory demonstration CRUD API; records are **lost when the server restarts**.
+All requests and responses are JSON.
+
+```bash
+# Create
+curl -i -H 'Content-Type: application/json' \
+  -d '{"firstName":"Ada","lastName":"Lovelace"}' \
+  http://127.0.0.1:8080/api/people
+
+# List
+curl -i http://127.0.0.1:8080/api/people
+
+# Read
+curl -i http://127.0.0.1:8080/api/people/1
+
+# Replace
+curl -i -X PUT -H 'Content-Type: application/json' \
+  -d '{"firstName":"Grace","lastName":"Hopper"}' \
+  http://127.0.0.1:8080/api/people/1
+
+# Delete
+curl -i -X DELETE http://127.0.0.1:8080/api/people/1
+```
+
+Only `firstName` and `lastName` are accepted; both must be nonblank
+strings of at most 100 characters. Invalid JSON returns 400, invalid
+resource fields 422, unsupported media types 415, missing resources 404,
+and unsupported methods 405. No authentication or persistence is provided.
