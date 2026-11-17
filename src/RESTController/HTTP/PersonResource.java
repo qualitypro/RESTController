@@ -6,15 +6,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
+import java.nio.file.Path;
 
-/** In-memory person resource API; intentionally non-persistent. */
+/** Validated person resource API backed by a durable local snapshot. */
 final class PersonResource {
     private static final int MAX_BODY_BYTES = 1024 * 1024;
     private final ObjectMapper mapper = new ObjectMapper();
-    private final ConcurrentHashMap<Long, ObjectNode> people = new ConcurrentHashMap<>();
-    private final AtomicLong ids = new AtomicLong();
+    private final PersonStore store;
+
+    PersonResource(Path file) throws IOException {
+        store = new PersonStore(file);
+    }
 
     void handle(HttpExchange exchange) throws IOException {
         try {
@@ -38,41 +40,36 @@ final class PersonResource {
             if (id == null) {
                 switch (method) {
                     case "GET" -> {
-                        var results = mapper.createArrayNode();
-                        people.entrySet().stream().sorted(java.util.Map.Entry.comparingByKey())
-                                .forEach(entry -> results.add(entry.getValue().deepCopy()));
-                        respond(exchange, 200, results);
+                        respond(exchange, 200, store.list());
                     }
                     case "POST" -> {
                         ObjectNode person = parsePerson(exchange);
                         if (person == null) return;
-                        long newId = ids.incrementAndGet();
-                        person.put("id", newId);
-                        people.put(newId, person);
-                        exchange.getResponseHeaders().set("Location", "/api/people/" + newId);
-                        respond(exchange, 201, person);
+                        ObjectNode created = store.create(person);
+                        exchange.getResponseHeaders().set("Location", "/api/people/" + created.get("id").asLong());
+                        respond(exchange, 201, created);
                     }
                     default -> methodNotAllowed(exchange, "GET, POST");
                 }
             } else {
                 switch (method) {
                     case "GET" -> {
-                        ObjectNode person = people.get(id);
+                        ObjectNode person = store.get(id);
                         respond(exchange, person == null ? 404 : 200,
                                 person == null ? error("Person not found") : person);
                     }
                     case "PUT" -> {
                         ObjectNode person = parsePerson(exchange);
                         if (person == null) return;
-                        person.put("id", id);
-                        if (people.replace(id, person) == null) {
+                        ObjectNode updated = store.replace(id, person);
+                        if (updated == null) {
                             respond(exchange, 404, error("Person not found"));
                         } else {
-                            respond(exchange, 200, person);
+                            respond(exchange, 200, updated);
                         }
                     }
                     case "DELETE" -> {
-                        if (people.remove(id) == null) {
+                        if (!store.delete(id)) {
                             respond(exchange, 404, error("Person not found"));
                         } else {
                             exchange.sendResponseHeaders(204, -1);
