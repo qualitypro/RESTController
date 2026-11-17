@@ -48,7 +48,7 @@ offline smoke tests.
 
 ## People resource API (Sprint 3)
 
-In-memory demonstration CRUD API; records are **lost when the server restarts**.
+Durable local JSON snapshot CRUD API; records **survive server restarts**.
 All requests and responses are JSON.
 
 ```bash
@@ -75,4 +75,15 @@ curl -i -X DELETE http://127.0.0.1:8080/api/people/1
 Only `firstName` and `lastName` are accepted; both must be nonblank
 strings of at most 100 characters. Invalid JSON returns 400, invalid
 resource fields 422, unsupported media types 415, missing resources 404,
-and unsupported methods 405. No authentication or persistence is provided.
+and unsupported methods 405. No authentication is provided. This local-file store is for a single process, not multiple server instances.
+
+## Persistent storage (Sprint 4)
+
+Set `REST_DATA_FILE` to the JSON snapshot location, or leave it unset to use
+`data/people.json` relative to the working directory. Parent directories are
+created on the first mutation. Each write replaces the snapshot via a temporary
+file; if atomic rename is unsupported, the store falls back to a regular rename.
+The server refuses to start with a malformed snapshot rather than silently
+resetting records. Back up the snapshot before upgrades and do not run multiple
+server processes against the same file. Restrict filesystem permissions because
+person names are stored as plaintext. No authentication is implemented yet.
