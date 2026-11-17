@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.concurrent.Executors;
 
 /** Small local REST server built only with JDK 17 APIs. */
@@ -13,13 +14,17 @@ public final class RestServer implements AutoCloseable {
     private final HttpServer server;
 
     public RestServer(String host, int port) throws IOException {
+        this(host, port, Path.of(System.getenv().getOrDefault("REST_DATA_FILE", "data/people.json")));
+    }
+
+    public RestServer(String host, int port, Path dataFile) throws IOException {
         if (port < 0 || port > 65535) {
             throw new IllegalArgumentException("Invalid port");
         }
         server = HttpServer.create(new InetSocketAddress(host, port), 32);
         server.createContext("/health", this::health);
         server.createContext("/api/echo", this::echo);
-        PersonResource people = new PersonResource();
+        PersonResource people = new PersonResource(dataFile);
         server.createContext("/api/people", people::handle);
         server.setExecutor(Executors.newCachedThreadPool(r -> {
             Thread thread = new Thread(r, "restcontroller-http");
