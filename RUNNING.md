@@ -118,3 +118,28 @@ headers have not already been sent; the detailed stack trace stays in server log
 For production deployments, collect and rotate standard Java logging output,
 terminate TLS at a trusted proxy, and configure a process supervisor to restart
 the service. Do not expose this development server directly to the internet.
+
+## Packaged deployment (Sprint 7)
+
+```bash
+mvn --batch-mode verify
+java -jar target/restcontroller-0.1.0-SNAPSHOT-server.jar
+```
+
+The Maven build now produces a runnable `-server.jar` containing the JSON
+dependencies. GitHub Actions tests the packaged executable against a local
+health endpoint and a create-person request, then publishes the JAR as a
+workflow artifact.
+
+For local startup, `bash scripts/run-server.sh` checks for the JAR and
+refuses a non-loopback listener without `REST_API_KEY`. The application
+entry point also refuses non-loopback startup without an API key. Use a
+cryptographically random key and TLS termination for any remote access.
+
+An example service definition is available at `deploy/restcontroller.service`.
+Provision a dedicated service account and a writable
+`/var/lib/restcontroller` directory before enabling it; customize the
+Java binary, JAR path, environment file and permissions for your host.
+
+The server stops accepting connections on JVM shutdown through its shutdown
+hook. It does not yet provide connection draining or a zero-downtime upgrade.
