@@ -12,20 +12,31 @@ import java.util.concurrent.Executors;
 public final class RestServer implements AutoCloseable {
     private static final int MAX_BODY_BYTES = 1024 * 1024;
     private final HttpServer server;
+    private final ApiKeyAuth auth;
 
     public RestServer(String host, int port) throws IOException {
-        this(host, port, Path.of(System.getenv().getOrDefault("REST_DATA_FILE", "data/people.json")));
+        this(host, port, Path.of(System.getenv().getOrDefault("REST_DATA_FILE", "data/people.json")),
+                System.getenv("REST_API_KEY"));
     }
 
     public RestServer(String host, int port, Path dataFile) throws IOException {
+        this(host, port, dataFile, System.getenv("REST_API_KEY"));
+    }
+
+    public RestServer(String host, int port, Path dataFile, String apiKey) throws IOException {
+        auth = new ApiKeyAuth(apiKey);
         if (port < 0 || port > 65535) {
             throw new IllegalArgumentException("Invalid port");
         }
         server = HttpServer.create(new InetSocketAddress(host, port), 32);
         server.createContext("/health", this::health);
-        server.createContext("/api/echo", this::echo);
+        server.createContext("/api/echo", exchange -> {
+            if (auth.authorized(exchange)) echo(exchange);
+        });
         PersonResource people = new PersonResource(dataFile);
-        server.createContext("/api/people", people::handle);
+        server.createContext("/api/people", exchange -> {
+            if (auth.authorized(exchange)) people.handle(exchange);
+        });
         server.setExecutor(Executors.newCachedThreadPool(r -> {
             Thread thread = new Thread(r, "restcontroller-http");
             thread.setDaemon(true);
