@@ -15,17 +15,23 @@ import java.util.Objects;
 public final class RestClient implements AutoCloseable {
     private final HttpClient client;
     private final Duration timeout;
+    private final String bearerToken;
 
     public RestClient() {
-        this(Duration.ofSeconds(15));
+        this(Duration.ofSeconds(15), null);
     }
 
     public RestClient(Duration timeout) {
+        this(timeout, null);
+    }
+
+    public RestClient(Duration timeout, String bearerToken) {
         Objects.requireNonNull(timeout, "timeout");
         if (timeout.isZero() || timeout.isNegative()) {
             throw new IllegalArgumentException("timeout must be positive");
         }
         this.timeout = timeout;
+        this.bearerToken = bearerToken;
         this.client = HttpClient.newBuilder()
                 .connectTimeout(timeout)
                 .followRedirects(HttpClient.Redirect.NEVER)
@@ -67,6 +73,9 @@ public final class RestClient implements AutoCloseable {
                 .timeout(timeout)
                 .header("Accept", "application/json")
                 .method(method, body);
+        if (bearerToken != null) {
+            builder.header("Authorization", "Bearer " + bearerToken);
+        }
         if (json != null) {
             builder.header("Content-Type", "application/json; charset=UTF-8");
         }
