@@ -106,3 +106,15 @@ development. **Never bind to a public network interface without enabling
 authentication and placing the service behind HTTPS.** Bearer tokens are
 transmitted in plaintext over HTTP. This is a single shared API key, not a
 user-account authorization system. Rotate the key by restarting the process.
+
+## Operational behavior (Sprint 6)
+
+Every HTTP response includes a generated `X-Request-ID` correlation identifier
+and `Cache-Control: no-store`. Request logs include method, path, status,
+request ID and duration. Authorization headers and request bodies are not logged.
+Unexpected handler exceptions produce a generic JSON HTTP 500 response when
+headers have not already been sent; the detailed stack trace stays in server logs.
+
+For production deployments, collect and rotate standard Java logging output,
+terminate TLS at a trusted proxy, and configure a process supervisor to restart
+the service. Do not expose this development server directly to the internet.
