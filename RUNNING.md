@@ -87,3 +87,22 @@ The server refuses to start with a malformed snapshot rather than silently
 resetting records. Back up the snapshot before upgrades and do not run multiple
 server processes against the same file. Restrict filesystem permissions because
 person names are stored as plaintext. No authentication is implemented yet.
+
+## Optional bearer authentication (Sprint 5)
+
+Set `REST_API_KEY` to a random secret of at least 24 characters before
+starting the server. Do **not** commit the secret, paste it into issue reports,
+or include it in startup logs. Example for a local shell:
+
+```bash
+export REST_API_KEY="$(openssl rand -hex 32)"
+java --module-path target/classes --module RESTController/RESTController.HTTP.RestServer
+```
+
+With `REST_API_KEY` configured, all `/api/people` and `/api/echo` requests
+require `Authorization: Bearer <token>`. `/health` remains public. Without
+the variable, authentication is disabled for backward-compatible local
+development. **Never bind to a public network interface without enabling
+authentication and placing the service behind HTTPS.** Bearer tokens are
+transmitted in plaintext over HTTP. This is a single shared API key, not a
+user-account authorization system. Rotate the key by restarting the process.
