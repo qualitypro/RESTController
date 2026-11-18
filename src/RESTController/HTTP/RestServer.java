@@ -29,14 +29,15 @@ public final class RestServer implements AutoCloseable {
             throw new IllegalArgumentException("Invalid port");
         }
         server = HttpServer.create(new InetSocketAddress(host, port), 32);
-        server.createContext("/health", this::health);
-        server.createContext("/api/echo", exchange -> {
-            if (auth.authorized(exchange)) echo(exchange);
-        });
+        server.createContext("/health", exchange ->
+                RequestHandler.run(exchange, this::health));
+        server.createContext("/api/echo", exchange -> RequestHandler.run(exchange, request -> {
+            if (auth.authorized(request)) echo(request);
+        }));
         PersonResource people = new PersonResource(dataFile);
-        server.createContext("/api/people", exchange -> {
-            if (auth.authorized(exchange)) people.handle(exchange);
-        });
+        server.createContext("/api/people", exchange -> RequestHandler.run(exchange, request -> {
+            if (auth.authorized(request)) people.handle(request);
+        }));
         server.setExecutor(Executors.newCachedThreadPool(r -> {
             Thread thread = new Thread(r, "restcontroller-http");
             thread.setDaemon(true);
