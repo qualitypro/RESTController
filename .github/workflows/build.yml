@@ -18,3 +18,22 @@ jobs:
           cache: maven
       - name: Compile and test
         run: mvn --batch-mode --no-transfer-progress verify
+      - name: Smoke test packaged server
+        shell: bash
+        run: |
+          set -euo pipefail
+          REST_PORT=18080 REST_DATA_FILE="$RUNNER_TEMP/people.json" java -jar target/restcontroller-0.1.0-SNAPSHOT-server.jar > "$RUNNER_TEMP/server.log" 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:18080/health | grep -q '"status":"ok"'; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:18080/health | grep -q '"status":"ok"'
+          curl --fail --silent -H 'Content-Type: application/json' -d '{"firstName":"Ada","lastName":"Lovelace"}' http://127.0.0.1:18080/api/people | grep -q '"id":1'
+          test -s "$RUNNER_TEMP/people.json"
+      - name: Upload packaged server
+        uses: actions/upload-artifact@v4
+        with:
+          name: restcontroller-server
+          path: target/restcontroller-0.1.0-SNAPSHOT-server.jar
