@@ -117,6 +117,12 @@ public final class RestServer implements AutoCloseable {
     public static void main(String[] args) throws Exception {
         String host = System.getenv().getOrDefault("REST_HOST", "127.0.0.1");
         int port = Integer.parseInt(System.getenv().getOrDefault("REST_PORT", "8080"));
+        String key = System.getenv("REST_API_KEY");
+        boolean loopback = "127.0.0.1".equals(host) || "::1".equals(host)
+                || "localhost".equalsIgnoreCase(host);
+        if (!loopback && (key == null || key.isBlank())) {
+            throw new IllegalStateException("REST_API_KEY is required for non-loopback binding");
+        }
         RestServer server = new RestServer(host, port);
         Runtime.getRuntime().addShutdownHook(new Thread(server::close));
         server.start();
