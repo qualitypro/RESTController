@@ -45,7 +45,7 @@ final class RequestHandler {
             }
         } finally {
             long elapsedMs = (System.nanoTime() - started) / 1_000_000;
-            LOG.info(() -> "requestId=" + requestId + " method=" + exchange.getRequestMethod()
+            LOG.info("requestId=" + requestId + " method=" + exchange.getRequestMethod()
                     + " path=" + exchange.getRequestURI().getPath()
                     + " status=" + statusForLog(exchange, status)
                     + " durationMs=" + elapsedMs);
