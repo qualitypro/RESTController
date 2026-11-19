@@ -1,0 +1,32 @@
+name: Full integration harness
+on:
+  push:
+    branches: [master, 'feature/**']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  full-harness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Run fresh-checkout harness
+        env:
+          REST_TEST_REF: ${{ github.sha }}
+          REST_TEST_LOG: ${{ runner.temp }}/restcontroller-harness.log
+        run: bash scripts/full-test-harness.sh
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-harness-report
+          path: ${{ runner.temp }}/restcontroller-harness.log
+          if-no-files-found: warn
