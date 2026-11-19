@@ -76,6 +76,16 @@ echo "Restarting server to verify durable records"
 start_server
 python3 tests/harness/api_suite.py --base "$BASE" --token "$KEY" --phase restart
 stop_server
+echo "Running concurrent CRUD reliability tests"
+export REST_DATA_FILE="$ROOT/concurrency.json"
+start_server
+python3 tests/harness/concurrency_suite.py --base "$BASE" --token "$KEY" --count "${REST_TEST_CONCURRENCY_COUNT:-64}" --workers "${REST_TEST_CONCURRENCY_WORKERS:-12}" --phase initial
+stop_server
+echo "Restarting after concurrent mutations"
+start_server
+python3 tests/harness/concurrency_suite.py --base "$BASE" --token "$KEY" --count "${REST_TEST_CONCURRENCY_COUNT:-64}" --workers "${REST_TEST_CONCURRENCY_WORKERS:-12}" --phase restart
+stop_server
+export REST_DATA_FILE="$ROOT/people.json"
 echo "Testing corrupt storage startup failure"
 printf 'not json' > "$REST_DATA_FILE"
 if java -jar "$JAR" > "$ROOT/corrupt.log" 2>&1; then
