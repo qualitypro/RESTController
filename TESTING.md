@@ -71,3 +71,15 @@ penetration test, multi-process storage test, or production certification.
 The server is run only on loopback with a random test key. A successful
 run does not establish TLS safety, durability under sudden power loss,
 or suitability for internet-facing deployment.
+
+## Reliability sprint: concurrent CRUD and restart durability
+
+The full harness also runs `tests/harness/concurrency_suite.py` against a separate,
+disposable JSON store. By default, it sends 64 concurrent creates, updates and
+half-record deletes using 12 workers, verifies all writes and unique IDs, then
+restarts the server and checks surviving records and monotonic ID allocation.
+
+Tune with `REST_TEST_CONCURRENCY_COUNT` (2–500) and
+`REST_TEST_CONCURRENCY_WORKERS` (1–64). These are bounded stress checks, not
+a throughput benchmark. The server is terminated and restarted normally;
+power-loss and disk-failure durability are not simulated.
