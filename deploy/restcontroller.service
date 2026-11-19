@@ -1,0 +1,29 @@
+# RESTController systemd deployment example
+# Install as /etc/systemd/system/restcontroller.service after editing paths/user.
+# Use a root-managed EnvironmentFile (0600) for REST_API_KEY.
+[Unit]
+Description=RESTController local API server
+After=network.target
+
+[Service]
+Type=simple
+User=restcontroller
+Group=restcontroller
+WorkingDirectory=/opt/restcontroller
+Environment=REST_HOST=127.0.0.1
+Environment=REST_PORT=8080
+Environment=REST_DATA_FILE=/var/lib/restcontroller/people.json
+EnvironmentFile=-/etc/restcontroller/restcontroller.env
+ExecStart=/usr/bin/java -jar /opt/restcontroller/restcontroller-0.1.0-SNAPSHOT-server.jar
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/restcontroller
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
