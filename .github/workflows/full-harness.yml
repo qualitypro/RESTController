@@ -20,7 +20,7 @@ jobs:
           cache: maven
       - name: Run fresh-checkout harness
         env:
-          REST_TEST_REF: ${{ github.sha }}
+          REST_TEST_REF: ${{ github.event.pull_request.head.sha || github.sha }}
           REST_TEST_LOG: ${{ runner.temp }}/restcontroller-harness.log
         run: bash scripts/full-test-harness.sh
       - name: Upload test report
